@@ -1,87 +1,54 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.22)
 
-if(NOT DEFINED PROJECT_VERSION_PATCH OR PROJECT_VERSION_PATCH STREQUAL "")
+if (NOT DEFINED PROJECT_VERSION_PATCH OR PROJECT_VERSION_PATCH STREQUAL "")
     set(PROJECT_VERSION_PATCH 1)
-endif()
+endif ()
 
 set(PATCH_VERSION "${PROJECT_VERSION_PATCH}" CACHE INTERNAL "Patch version")
 set(PROJECT_VERSION 0.0.${PATCH_VERSION})
 
-project(helloworld VERSION ${PROJECT_VERSION})
+project(ip_filter VERSION ${PROJECT_VERSION})
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-option(WITH_GTEST_TEST "Whether to build GTest test" ON)
+include(FetchContent)
+FetchContent_Declare(
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG v1.14.0
+)
+FetchContent_MakeAvailable(googletest)
 
-find_package(GTest CONFIG REQUIRED)
+enable_testing()
 
 configure_file(version.h.in version.h)
 
-add_executable(helloworld_cli main.cpp)
-add_library(helloworld lib.cpp)
+add_subdirectory(src)
+add_subdirectory(tests)
 
-set_target_properties(helloworld_cli helloworld PROPERTIES
-        CXX_STANDARD 14
-        CXX_STANDARD_REQUIRED ON
+add_executable(${PROJECT_NAME} main.cpp)
+
+target_include_directories(${PROJECT_NAME}_lib
+        PRIVATE ${CMAKE_BINARY_DIR}
 )
 
-target_include_directories(helloworld
-        PRIVATE "${CMAKE_BINARY_DIR}"
+target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_lib)
+
+target_compile_options(${PROJECT_NAME} PRIVATE
+        -Wall -Wextra -pedantic -Werror
+)
+target_compile_options(${PROJECT_NAME}_lib PRIVATE
+        -Wall -Wextra -pedantic -Werror
+)
+target_compile_options(${PROJECT_NAME}_test PRIVATE
+        -Wall -Wextra -pedantic -Werror
 )
 
-target_link_libraries(helloworld_cli PRIVATE
-        helloworld
-)
-
-if (WITH_GTEST_TEST)
-    add_executable(test_version test_version.cpp)
-
-    set_target_properties(test_version PROPERTIES
-            CXX_STANDARD 14
-            CXX_STANDARD_REQUIRED ON
-    )
-
-    target_link_libraries(test_version
-            helloworld
-            GTest::gtest
-            GTest::gtest_main
-    )
-endif ()
-
-if (MSVC)
-    target_compile_options(helloworld_cli PRIVATE
-            /W4
-    )
-    target_compile_options(helloworld PRIVATE
-            /W4
-    )
-    if (WITH_GTEST_TEST)
-        target_compile_options(test_version PRIVATE
-                /W4
-        )
-    endif ()
-else ()
-    target_compile_options(helloworld_cli PRIVATE
-            -Wall -Wextra -pedantic -Werror
-    )
-    target_compile_options(helloworld PRIVATE
-            -Wall -Wextra -pedantic -Werror
-    )
-    if (WITH_GTEST_TEST)
-        target_compile_options(test_version PRIVATE
-                -Wall -Wextra -pedantic -Werror
-        )
-    endif ()
-endif ()
-
-install(TARGETS helloworld_cli RUNTIME DESTINATION bin)
+install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
 
 set(CPACK_GENERATOR DEB)
-set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
-set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
-set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
-set(CPACK_PACKAGE_CONTACT example@example.com)
+set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+set(CPACK_PACKAGE_CONTACT fabish@bk.ru)
 include(CPack)
-
-if (WITH_GTEST_TEST)
-    enable_testing()
-    add_test(test_version test_version)
-endif ()

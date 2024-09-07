@@ -1,9 +1,8 @@
-#include "lib.h"
-
 #include <iostream>
+#include "ip_filter.h"
 
-int main(int, char **) {
-	std::cout << "Version: " << version() << std::endl;
-	std::cout << "Hello, world!" << std::endl;
+int main() {
+	IpFilter filter{};
+	std::cout << "Version ip filter=" << filter.Version() << std::endl;
 	return 0;
 }
