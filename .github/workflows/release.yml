@@ -16,18 +16,9 @@ jobs:
         run: |
           sudo apt update
           sudo apt install cmake -y
-      - name: Download GTest latest version 1.15.2 on 01.09.2024
-        run: wget https://github.com/google/googletest/releases/download/v1.15.2/googletest-1.15.2.tar.gz
-      - name: Build GTest
+      - name: Build ip_filter
         run: |
-           tar -xzvf googletest-1.15.2.tar.gz
-           cd googletest-1.15.2
-           cmake -S . -B ./build -DCMAKE_BUILD_TYPE=Release
-           cmake --build ./build
-           sudo cmake --build ./build --target=install -j4
-      - name: Build helloworld
-        run: |
-          cmake . -DPROJECT_VERSION_PATCH=${{ github.run_number }} -DWITH_GTEST_TEST=ON
+          cmake . -DPROJECT_VERSION_PATCH=${{ github.run_number }}
           cmake --build .
           cmake --build . --target test
           cmake --build . --target package
@@ -37,7 +28,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ github.run_number }}
+          tag_name: ${{ github.run_number }}
           release_name: Release ${{ github.run_number }}
           draft: false
           prerelease: false
@@ -48,6 +39,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./helloworld-0.0.${{ github.run_number }}-Linux.deb
-          asset_name: helloworld-0.0.${{ github.run_number }}-Linux.deb
+          asset_path: ./ip_filter-0.0.${{ github.run_number }}-Linux.deb
+          asset_name: ip_filter-0.0.${{ github.run_number }}-Linux.deb
           asset_content_type: application/vnd.debian.binary-package
