@@ -15,7 +15,12 @@ jobs:
       - name: Install cmake
         run: |
           sudo apt update
-          sudo apt install cmake -y
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+          wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
+          sudo apt-add-repository "deb https://apt.kitware.com/ubuntu/ $(lsb_release -cs) main" -y
+          sudo apt update
+          sudo apt install build-essential gcc-13 g++-13 cmake git gdb libgtest-dev libboost-all-dev -y
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 140 --slave /usr/bin/g++ g++ /usr/bin/g++-13
       - name: Build ip_filter
         run: |
           cmake . -DPROJECT_VERSION_PATCH=${{ github.run_number }}

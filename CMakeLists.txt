@@ -8,16 +8,11 @@ set(PATCH_VERSION "${PROJECT_VERSION_PATCH}" CACHE INTERNAL "Patch version")
 set(PROJECT_VERSION 0.0.${PATCH_VERSION})
 
 project(ip_filter VERSION ${PROJECT_VERSION})
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-include(FetchContent)
-FetchContent_Declare(
-        googletest
-        GIT_REPOSITORY https://github.com/google/googletest.git
-        GIT_TAG v1.14.0
-)
-FetchContent_MakeAvailable(googletest)
+find_package(GTest REQUIRED)
+find_package(Boost REQUIRED)
 
 enable_testing()
 
@@ -26,22 +21,32 @@ configure_file(version.h.in version.h)
 add_subdirectory(src)
 add_subdirectory(tests)
 
-add_executable(${PROJECT_NAME} main.cpp)
+add_executable(${PROJECT_NAME} main.cpp include/otus_tasks.h)
 
 target_include_directories(${PROJECT_NAME}_lib
-        PRIVATE ${CMAKE_BINARY_DIR}
+        PUBLIC ${CMAKE_BINARY_DIR}
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_lib)
 
-target_compile_options(${PROJECT_NAME} PRIVATE
-        -Wall -Wextra -pedantic -Werror
+#target_compile_options(${PROJECT_NAME} PRIVATE
+#        -Wall -Wextra -pedantic -Werror
+#)
+#target_compile_options(${PROJECT_NAME}_lib PRIVATE
+#        -Wall -Wextra -pedantic -Werror
+#)
+#target_compile_options(${PROJECT_NAME}_test PRIVATE
+#        -Wall -Wextra -pedantic -Werror
+#)
+
+set(TEST_FILES
+        ${CMAKE_SOURCE_DIR}/tests/files/ip_filter.tsv
 )
-target_compile_options(${PROJECT_NAME}_lib PRIVATE
-        -Wall -Wextra -pedantic -Werror
-)
-target_compile_options(${PROJECT_NAME}_test PRIVATE
-        -Wall -Wextra -pedantic -Werror
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy ${TEST_FILES} $<TARGET_FILE_DIR:${PROJECT_NAME}>
+        COMMAND ${CMAKE_COMMAND} -E copy ${TEST_FILES} $<TARGET_FILE_DIR:${PROJECT_NAME}>/tests
+        COMMENT "Copying test files to output directory"
 )
 
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)

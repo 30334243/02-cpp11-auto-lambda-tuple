@@ -5,8 +5,8 @@
       "name": "default",
       "hidden": true,
       "displayName": "Default Config",
-      "description": "Default build using Ninja generator",
-      "generator": "Ninja",
+      "description": "Default build using Makefile generator",
+      "generator": "Unix Makefiles",
       "binaryDir": "${sourceDir}/build-wsl",
       "vendor": {
         "jetbrains.com/clion": {
