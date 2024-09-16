@@ -1,6 +1,6 @@
-add_library(ip_filter_lib
+add_library(${PROJECT_NAME}_lib
         ip_filter.cpp
 )
 
-target_include_directories(ip_filter_lib PUBLIC ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(ip_filter_lib PRIVATE Boost::boost)
+target_include_directories(${PROJECT_NAME}_lib PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(${PROJECT_NAME}_lib PRIVATE Boost::system Boost::filesystem)

@@ -1,10 +1,4 @@
-#include <fstream>
-#include <ranges>
-#include <iostream>
-#include <iomanip>
-#include <algorithm>
 #include "ip_filter.h"
-#include "version.h"
 
 IpFilter::IpFilter(std::string const file) : file{file} {
 }
@@ -29,6 +23,7 @@ void IpFilter::parsing(std::string const &line) {
     for (auto const &ip: std::views::split(line, '\t') |
                          std::views::take(1) |
                          std::views::filter(is_valid_size) |
+                         std::views::filter(is_valid_num_points) | // for windows
                          std::views::transform(convert_to_ip) |
                          std::views::filter(is_valid_ip) |
                          std::views::transform(get_ip)) {

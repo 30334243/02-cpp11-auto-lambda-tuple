@@ -5,6 +5,48 @@
 #include <vector>
 #include <iostream>
 #include <boost/asio/ip/address_v4.hpp>
+#include <fstream>
+#include <iomanip>
+#include <algorithm>
+#include "version.h"
+
+namespace Otus {
+    static bool task_1(boost::asio::ip::address_v4 const &) {
+        return true;
+    }
+
+    static constexpr auto task_2{
+        [](boost::asio::ip::address_v4 const &ip) {
+            static constexpr int kFirstByte{3};
+
+            auto const raw_ip{ip.to_uint()};
+            uint8_t const* raw{reinterpret_cast<uint8_t const*>(&raw_ip)};
+            std::span<uint8_t const> const ptr_raw_ip{raw, sizeof(uint32_t)};
+            return ptr_raw_ip[kFirstByte] == 1;
+        }
+    };
+
+    static constexpr auto task_3{
+        [](boost::asio::ip::address_v4 const &ip) {
+            static constexpr int kFirstByte{3};
+            static constexpr int kSecondByte{2};
+
+            auto raw_ip{ip.to_uint()};
+            uint8_t const * raw{reinterpret_cast<uint8_t const *>(&raw_ip)};
+            std::span<uint8_t const> const ptr_raw_ip{raw, sizeof(uint32_t)};
+            return ptr_raw_ip[kFirstByte] == 46 && ptr_raw_ip[kSecondByte] == 70;
+        }
+    };
+
+    static constexpr auto task_4{
+        [](boost::asio::ip::address_v4 const &ip) {
+            auto raw_ip{ip.to_uint()};
+            uint8_t const * raw{reinterpret_cast<uint8_t const *>(&raw_ip)};
+            std::span<uint8_t const> const ptr_raw_ip{raw, sizeof(uint32_t)};
+            return std::ranges::find(ptr_raw_ip, 46) != ptr_raw_ip.end();
+        }
+    };
+}
 
 /**
  * @brief Класс только для наследования. Функции для std::ranges
@@ -27,12 +69,24 @@ protected:
     };
 
     /**
+     * @brief Проверка количества точек в строке ip адерса
+     * @details В ip адресе должно быть 3 (строка "255.255.255.255")
+     */
+    static constexpr auto is_valid_num_points{
+        [](auto &&rng) {
+            static constexpr int kNumPoints{3};
+
+            return std::ranges::count(rng, '.') == kNumPoints;
+        }
+    };
+
+    /**
      * @brief Конвертация ip адреса строки в boost::asio::ip::address_v4 и состояние валидности ip адреса
      */
     static constexpr auto convert_to_ip{
         [](auto &&rng) {
             boost::system::error_code ec{};
-            std::string const str{&*rng.begin(), static_cast<uint32_t>(std::ranges::distance(rng))};
+            std::string const str{std::ranges::cbegin(rng), std::ranges::cend(rng)};
             auto const address{boost::asio::ip::address_v4::from_string(str, ec)};
             return ip_info_t{address, ec};
         }
@@ -72,6 +126,7 @@ public:
      * @param file Путь до входного файла
      */
     explicit IpFilter(std::string const file);
+
     explicit IpFilter() = default;
 
     /**
@@ -117,12 +172,13 @@ public:
 
     /// Версия патча
     static uint64_t Version();
+
 private:
     /**
      * @brief Парсинг строки ip адреса
      * @param line Строка ip адреса
      */
-    void parsing(std::string const& line);
+    void parsing(std::string const &line);
 
 private:
     /// Путь входного файла

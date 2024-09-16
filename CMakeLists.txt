@@ -11,33 +11,46 @@ project(ip_filter VERSION ${PROJECT_VERSION})
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(GTest REQUIRED)
-find_package(Boost REQUIRED)
-
-enable_testing()
+find_package(Boost REQUIRED COMPONENTS system filesystem)
 
 configure_file(version.h.in version.h)
 
 add_subdirectory(src)
-add_subdirectory(tests)
 
-add_executable(${PROJECT_NAME} main.cpp include/otus_tasks.h)
+add_executable(${PROJECT_NAME} main.cpp)
 
 target_include_directories(${PROJECT_NAME}_lib
         PUBLIC ${CMAKE_BINARY_DIR}
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_lib)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_lib Boost::system)
 
-#target_compile_options(${PROJECT_NAME} PRIVATE
-#        -Wall -Wextra -pedantic -Werror
-#)
-#target_compile_options(${PROJECT_NAME}_lib PRIVATE
-#        -Wall -Wextra -pedantic -Werror
-#)
-#target_compile_options(${PROJECT_NAME}_test PRIVATE
-#        -Wall -Wextra -pedantic -Werror
-#)
+enable_testing()
+add_subdirectory(tests)
+
+if (WINDOWS_SPECIFIC_FLAG)
+    target_compile_options(${PROJECT_NAME} PRIVATE
+            /W4
+    )
+    target_compile_options(${PROJECT_NAME}_lib PRIVATE
+            /W4
+    )
+    target_compile_options(${PROJECT_NAME}_test PRIVATE
+            /W4
+    )
+elseif (WSL_SPECIFIC_FLAG)
+#    target_compile_options(${PROJECT_NAME} PRIVATE
+#            -Wall -Wextra -pedantic -Werror
+#    )
+#    target_compile_options(${PROJECT_NAME}_lib PRIVATE
+#            -Wall -Wextra -pedantic -Werror
+#    )
+#    target_compile_options(${PROJECT_NAME}_test PRIVATE
+#            -Wall -Wextra -pedantic -Werror
+#    )
+else ()
+    message(FATAL_ERROR "Error. Stopping. Unknown Platform")
+endif ()
 
 set(TEST_FILES
         ${CMAKE_SOURCE_DIR}/tests/files/ip_filter.tsv
@@ -45,7 +58,6 @@ set(TEST_FILES
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy ${TEST_FILES} $<TARGET_FILE_DIR:${PROJECT_NAME}>
-        COMMAND ${CMAKE_COMMAND} -E copy ${TEST_FILES} $<TARGET_FILE_DIR:${PROJECT_NAME}>/tests
         COMMENT "Copying test files to output directory"
 )
 

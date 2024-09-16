@@ -1,29 +1,32 @@
 #include <gtest/gtest.h>
+#include <ranges>
+#include <filesystem>
+#include <cstdio>
+#include <algorithm>
+#include <boost/process.hpp>
+#include <boost/uuid/detail/md5.hpp>
+#include <boost/algorithm/hex.hpp>
 #include "ip_filter.h"
-#include "otus_tasks.h"
 
-// Функция для запуска команды и получения её вывода
-std::string exec(const char *cmd) {
-    char buffer[128]{};
-    std::string result{};
-    FILE *pipe{popen(cmd, "r")};
-    if (!pipe) throw std::runtime_error("popen() failed!");
-    try {
-        while (fgets(buffer, sizeof buffer, pipe) != nullptr) {
-            result += buffer;
-        }
-    } catch (...) {
-        pclose(pipe);
-        throw;
-    }
-    pclose(pipe);
+std::string md5sum(std::string const &input) {
+    boost::uuids::detail::md5 md5;
+    boost::uuids::detail::md5::digest_type digest;
+
+    md5.process_bytes(input.data(), input.size());
+    md5.get_digest(digest);
+
+    const auto charDigest = reinterpret_cast<const char *>(&digest);
+    std::string result;
+    boost::algorithm::hex(charDigest, charDigest + sizeof(digest), std::back_inserter(result));
+
     return result;
 }
 
-//-------------------TESTS-------------------
+//--------------------TESTS--------------------
 
 TEST(test_ip_filter, ip_parsing) {
     static constexpr int kEthalonSizeIPs{2};
+
     static std::string const kEthalonIP{
         "255.255.255.255"
     };
@@ -36,9 +39,12 @@ TEST(test_ip_filter, ip_parsing) {
         "255.255.255.2555\t",
         "255.255.255\t",
         "255.255.255.255",
+        "xxx.255.255.255\t",
+        "abc.255.255.255\t",
     };
     IpFilter ip_filter{};
     ASSERT_NO_THROW(ip_filter.ParsingInputVector(in));
+
     auto const ips{ip_filter.GetIPs()};
     ASSERT_EQ(ips.size(), kEthalonSizeIPs);
     for (auto const &ip: ips) {
@@ -62,14 +68,28 @@ TEST(test_ip_filter, ip_sorting) {
     ip_filter.Sorting(std::greater{});
     auto const ips{ip_filter.GetIPs()};
     ASSERT_EQ(ips.size(), kEthalonIP.size());
-    for (int i{}; i < ips.size(); ++i) {
+
+    int const size{static_cast<int>(ips.size())};
+    std::ranges::for_each(std::views::iota(0, size), [&ips](int const i) {
         ASSERT_TRUE(std::ranges::equal(ips[i].to_string(), kEthalonIP[i]));
-    }
+    });
 }
 
-TEST(test_ip_filter, otus_task) {
-    std::string const cmd{"cd .. && cat ip_filter.tsv | ./ip_filter | md5sum"};
-    std::string const output{exec(cmd.c_str())};
-    std::string const ethalon{"24e7a7b2270daee89c64d3ca5fb3da1a  -\n"};
-    EXPECT_EQ(output, ethalon);
+TEST(test_ip_filter, ip_filter) {
+    static std::string const kFileTest{"ip_filter.tsv"};
+
+    IpFilter ip_filter{kFileTest};
+    ASSERT_TRUE(ip_filter.ParsingInputFile());
+
+    std::stringstream buffer{};
+    std::streambuf* old_cout { std::cout.rdbuf()};
+    std::cout.rdbuf(buffer.rdbuf());
+
+    ip_filter.Sorting(std::greater{});
+    ip_filter.Filter(Otus::task_1, Otus::task_2, Otus::task_3, Otus::task_4);
+
+    std::cout.rdbuf(old_cout);
+    std::string const output{buffer.str()};
+
+    ASSERT_EQ(md5sum(buffer.str()), "B2A7E724E8AE0D27CAD3649C1ADAB35F");
 }

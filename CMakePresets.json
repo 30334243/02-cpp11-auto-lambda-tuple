@@ -1,13 +1,57 @@
 {
-  "version": 3,
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 22,
+    "patch": 0
+  },
   "configurePresets": [
     {
-      "name": "default",
+      "name": "config-default",
       "hidden": true,
-      "displayName": "Default Config",
-      "description": "Default build using Makefile generator",
+      "installDir": "${sourceDir}/../build/install"
+    },
+    {
+      "name": "windows-config-default",
+      "hidden": true,
+      "inherits": "config-default",
+      "generator": "Visual Studio 17 2022",
+      "cacheVariables": {
+        "WINDOWS_SPECIFIC_FLAG": "ON",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+      },
+      "vendor": {
+        "jetbrains.com/clion": {
+          "toolchain": "Visual Studio"
+        }
+      }
+    },
+    {
+      "name": "windows-config-debug",
+      "inherits": "windows-config-default",
+      "binaryDir": "${sourceDir}/../build/windows-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "windows-config-release",
+      "inherits": "windows-config-default",
+      "binaryDir": "${sourceDir}/../build/windows-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "wsl-config-default",
+      "hidden": true,
+      "inherits": "config-default",
       "generator": "Unix Makefiles",
-      "binaryDir": "${sourceDir}/build-wsl",
+      "cacheVariables": {
+        "WSL_SPECIFIC_FLAG": "ON",
+        "VCPKG_TARGET_TRIPLET": "x64-linux"
+      },
       "vendor": {
         "jetbrains.com/clion": {
           "toolchain": "WSL"
@@ -15,21 +59,17 @@
       }
     },
     {
-      "name": "debug",
-      "inherits": "default",
-      "displayName": "Debug Config",
-      "description": "Debug build with symbols",
-      "binaryDir": "${sourceDir}/build-wsl/debug",
+      "name": "wsl-config-debug",
+      "inherits": "wsl-config-default",
+      "binaryDir": "${sourceDir}/../build/wsl-debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
-      "name": "release",
-      "inherits": "default",
-      "displayName": "Release Config",
-      "description": "Optimized release build",
-      "binaryDir": "${sourceDir}/build-wsl/release",
+      "name": "wsl-config-release",
+      "inherits": "wsl-config-default",
+      "binaryDir": "${sourceDir}/../build/wsl-release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       }
@@ -37,17 +77,118 @@
   ],
   "buildPresets": [
     {
-      "name": "default",
+      "name": "build-default",
       "hidden": true,
-      "configurePreset": "default"
+      "configurePreset": "config-default",
+      "jobs": 4
     },
     {
-      "name": "debug",
-      "configurePreset": "debug"
+      "name": "windows-build-debug",
+      "inherits": "build-default",
+      "configurePreset": "windows-config-debug",
+      "configuration": "Debug"
     },
     {
-      "name": "release",
-      "configurePreset": "release"
+      "name": "windows-build-release",
+      "inherits": "build-default",
+      "configurePreset": "windows-config-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "wsl-build-debug",
+      "inherits": "build-default",
+      "configurePreset": "wsl-config-debug"
+    },
+    {
+      "name": "wsl-build-release",
+      "inherits": "build-default",
+      "configurePreset": "wsl-config-release"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "test-default",
+      "hidden": true,
+      "configurePreset": "config-default",
+      "configuration": "Release"
+    },
+    {
+      "name": "windows-test",
+      "inherits": "test-default",
+      "configurePreset": "windows-config-release"
+    },
+    {
+      "name": "wsl-test",
+      "inherits": "test-default",
+      "configurePreset": "wsl-config-release"
+    }
+  ],
+  "packagePresets": [
+    {
+      "name": "package-default",
+      "hidden": true,
+      "configurePreset": "config-default",
+      "packageDirectory": "${sourceDir}/../build/install"
+    },
+    {
+      "name": "windows-package",
+      "inherits": "package-default",
+      "configurePreset": "windows-config-release",
+      "generators": [
+        "ZIP"
+      ]
+    },
+    {
+      "name": "wsl-package",
+      "inherits": "package-default",
+      "configurePreset": "wsl-config-release",
+      "generators": [
+        "DEB"
+      ]
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "windows-ci",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "windows-config-release"
+        },
+        {
+          "type": "build",
+          "name": "windows-build-release"
+        },
+        {
+          "type": "test",
+          "name": "windows-test"
+        },
+        {
+          "type": "package",
+          "name": "windows-package"
+        }
+      ]
+    },
+    {
+      "name": "wsl-ci",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "wsl-config-release"
+        },
+        {
+          "type": "build",
+          "name": "wsl-build-release"
+        },
+        {
+          "type": "test",
+          "name": "wsl-test"
+        },
+        {
+          "type": "package",
+          "name": "wsl-package"
+        }
+      ]
     }
   ]
 }
