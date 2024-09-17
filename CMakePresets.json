@@ -10,9 +10,9 @@
       "name": "config-default",
       "hidden": true,
       "installDir": "${sourceDir}/../build/install",
-      "environment": {
-        "GITHUB_RUN_NUMBER": "${env:GITHUB_RUN_NUMBER}"
-      }
+      "cacheVariables" :{
+"PROJECT_VERSION_PATCH" :"$env{GITHUB_RUN_NUMBER}" 
+} 
     },
     {
       "name": "windows-config-default",
