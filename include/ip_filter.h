@@ -11,7 +11,7 @@
 #include "version.h"
 
 namespace Otus {
-    static bool task_1(boost::asio::ip::address_v4 const &) {
+    static constexpr bool task_1(boost::asio::ip::address_v4 const &) {
         return true;
     }
 
@@ -125,7 +125,7 @@ public:
      * @brief Конструктор. Сохранить путь входного файла
      * @param file Путь до входного файла
      */
-    explicit IpFilter(std::string const file);
+    explicit IpFilter(std::string const& file);
 
     explicit IpFilter() = default;
 
@@ -145,6 +145,8 @@ public:
      * @param func Функция сортировки
      */
     void Sorting(std::function<bool(boost::asio::ip::address_v4 const &, boost::asio::ip::address_v4 const &)> func);
+
+    bool ParsingCxx17();
 
     /**
      * @brief Фильтрация ip адресов
@@ -180,9 +182,19 @@ private:
      */
     void parsing(std::string const &line);
 
+    void parsing_cxx17(std::string const &in);
+
+    static std::tuple<std::string,uint32_t> parsingIpElements(std::vector<std::string> const& ip_elements);
+
+    void filter_task_1() const;
+    void filter_task_2() const;
+    void filter_task_3() const;
+    void filter_task_4() const;
+
 private:
     /// Путь входного файла
     std::string const file{};
     /// Контейнер для хранения ip адресов после парсинга входного файла
     std::vector<boost::asio::ip::address_v4> ips{};
+    std::vector<std::tuple<std::string, uint32_t> > ips_cxx17{};
 };

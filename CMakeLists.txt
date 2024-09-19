@@ -1,10 +1,15 @@
 cmake_minimum_required(VERSION 3.22)
 
+if (WINDOWS_SPECIFIC_FLAG)
+    include(${ENV})
+endif ()
+
+set(PROJECT_VERSION_PATCH $ENV{GITHUB_RUN_NUMBER})
+
 if (NOT DEFINED PROJECT_VERSION_PATCH OR PROJECT_VERSION_PATCH STREQUAL "")
     set(PROJECT_VERSION_PATCH 1)
 endif ()
 
-set(PROJECT_VERSION_PATCH $ENV{GITHUB_RUN_NUMBER})
 set(PATCH_VERSION "${PROJECT_VERSION_PATCH}" CACHE INTERNAL "Patch version")
 set(PROJECT_VERSION 0.0.${PATCH_VERSION})
 
@@ -12,7 +17,16 @@ project(ip_filter VERSION ${PROJECT_VERSION})
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Boost REQUIRED COMPONENTS system filesystem)
+if (POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)
+endif ()
+add_definitions(-D_WIN32_WINNT=0x0601)
+
+if (WINDOWS_SPECIFIC_FLAG)
+    find_package(Boost 1.86 REQUIRED COMPONENTS system filesystem)
+else ()
+    find_package(Boost REQUIRED COMPONENTS system filesystem)
+endif ()
 
 configure_file(version.h.in version.h)
 
@@ -40,15 +54,15 @@ if (WINDOWS_SPECIFIC_FLAG)
             /W4
     )
 elseif (WSL_SPECIFIC_FLAG)
-#    target_compile_options(${PROJECT_NAME} PRIVATE
-#            -Wall -Wextra -pedantic -Werror
-#    )
-#    target_compile_options(${PROJECT_NAME}_lib PRIVATE
-#            -Wall -Wextra -pedantic -Werror
-#    )
-#    target_compile_options(${PROJECT_NAME}_test PRIVATE
-#            -Wall -Wextra -pedantic -Werror
-#    )
+        target_compile_options(${PROJECT_NAME} PRIVATE
+                -Wall -Wextra -pedantic -Werror
+        )
+        target_compile_options(${PROJECT_NAME}_lib PRIVATE
+                -Wall -Wextra -pedantic -Werror
+        )
+        target_compile_options(${PROJECT_NAME}_test PRIVATE
+                -Wall -Wextra -pedantic -Werror
+        )
 else ()
     message(FATAL_ERROR "Error. Stopping. Unknown Platform")
 endif ()
@@ -61,6 +75,7 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy ${TEST_FILES} $<TARGET_FILE_DIR:${PROJECT_NAME}>
         COMMENT "Copying test files to output directory"
 )
+
 
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
 

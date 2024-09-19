@@ -93,3 +93,20 @@ TEST(test_ip_filter, ip_filter) {
 
     ASSERT_EQ(md5sum(buffer.str()), "B2A7E724E8AE0D27CAD3649C1ADAB35F");
 }
+
+TEST(test_ip_filter, ip_filter_cxx17) {
+    static std::string const kFileTest{"ip_filter.tsv"};
+
+    IpFilter ip_filter{kFileTest};
+
+    std::stringstream buffer{};
+    std::streambuf* old_cout { std::cout.rdbuf()};
+    std::cout.rdbuf(buffer.rdbuf());
+
+    ASSERT_TRUE(ip_filter.ParsingCxx17());
+
+    std::cout.rdbuf(old_cout);
+    std::string const output{buffer.str()};
+
+    ASSERT_EQ(md5sum(buffer.str()), "B2A7E724E8AE0D27CAD3649C1ADAB35F");
+}
