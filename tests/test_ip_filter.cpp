@@ -75,38 +75,50 @@ TEST(test_ip_filter, ip_sorting) {
     });
 }
 
-TEST(test_ip_filter, ip_filter) {
+TEST(test_ip_filter, ip_filter_cxx23) {
     static std::string const kFileTest{"ip_filter.tsv"};
+    static constexpr int kCxx23{23};
 
-    IpFilter ip_filter{kFileTest};
-    ASSERT_TRUE(ip_filter.ParsingInputFile());
+    IpFilter ip_filter{kFileTest, "", kCxx23};
 
     std::stringstream buffer{};
-    std::streambuf* old_cout { std::cout.rdbuf()};
+    std::streambuf *old_cout{std::cout.rdbuf()};
     std::cout.rdbuf(buffer.rdbuf());
 
-    ip_filter.Sorting(std::greater{});
-    ip_filter.Filter(Otus::task_1, Otus::task_2, Otus::task_3, Otus::task_4);
+    ASSERT_TRUE(ip_filter.Parsing());
 
     std::cout.rdbuf(old_cout);
     std::string const output{buffer.str()};
 
+#ifdef WSL_SPECIFIC_FLAG
     ASSERT_EQ(md5sum(buffer.str()), "B2A7E724E8AE0D27CAD3649C1ADAB35F");
+#elifdef WINDOWS_SPECIFIC_FLAG
+    ASSERT_EQ(md5sum(buffer.str()), "24E7A7B2270DAEE89C64D3CA5FB3DA1A");
+#else
+    ASSERT_TRUE(false);
+#endif
 }
 
 TEST(test_ip_filter, ip_filter_cxx17) {
     static std::string const kFileTest{"ip_filter.tsv"};
+    static constexpr int kCxx17{17};
 
-    IpFilter ip_filter{kFileTest};
+    IpFilter ip_filter{kFileTest, "", kCxx17};
 
     std::stringstream buffer{};
-    std::streambuf* old_cout { std::cout.rdbuf()};
+    std::streambuf *old_cout{std::cout.rdbuf()};
     std::cout.rdbuf(buffer.rdbuf());
 
-    ASSERT_TRUE(ip_filter.ParsingCxx17());
+    ASSERT_TRUE(ip_filter.Parsing());
 
     std::cout.rdbuf(old_cout);
     std::string const output{buffer.str()};
 
+#ifdef WSL_SPECIFIC_FLAG
     ASSERT_EQ(md5sum(buffer.str()), "B2A7E724E8AE0D27CAD3649C1ADAB35F");
+#elifdef WINDOWS_SPECIFIC_FLAG
+    ASSERT_EQ(md5sum(buffer.str()), "24E7A7B2270DAEE89C64D3CA5FB3DA1A");
+#else
+    ASSERT_TRUE(false);
+#endif
 }
